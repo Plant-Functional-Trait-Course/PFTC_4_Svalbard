@@ -55,6 +55,8 @@ vignettes/*.pdf
 *.jpg
 *.md
 !SvalbardMountain.png
+!trait-plot-1.png
+!diversity-plot-1.png
 
 # Temporary files created by R markdown
 *.utf8.md
