@@ -25,8 +25,9 @@ library("dataDownloader")
 library("vegan")
 library("ggvegan")
 library("patchwork")
+library("drake")
 
-source("./DataPaper/R/Functions/GradientAnalysis.R")
+r_make(source = "DataPaper/R/DataPaperDrakePlan.R")
 
 theme_set(theme_bw(base_size = 12))
 
@@ -182,11 +183,7 @@ Diversity indices along the elevational gradient.
 
 ```{r diversity-plot, eval = TRUE, echo = FALSE, fig.cap="Diversity along the elevational gradients."}
 
-community_gradient <- read_csv(file = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
-
-diverstiy_gradient = Gradient_Diversity(community_gradient)
-
-Gradient_Diversity_Figure(diverstiy_gradient)
+readd(Diversity_Plot)
 
 ```
  
@@ -286,9 +283,7 @@ Trait distributions along both elevational gradients.
 
 ```{r trait-plot, eval = TRUE, echo = FALSE, fig.cap="Trait distributions along the elevational gradient (grey) and the birdcliff gradient (green)." }
 
-traits_gradient <- read_csv(file = "clean_data/traits/PFTC4_Svalbard_2018_Traits_Gradients.csv")
-
-Gradient_Trait_Figure(traits_gradient)
+readd(Trait_Plot)
 
 ```
 
