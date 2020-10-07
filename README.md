@@ -5,7 +5,7 @@ p.caption {
 }
 </style>
 
-# PFTCOURSES, ELEVATIONAL GRADIENT, BIRD CLIFF AND ITEX EXPERIMENT, LONGYEARBYEN, SVALBARD
+# PFTC 4, ELEVATIONAL GRADIENT, BIRD CLIFF AND ITEX EXPERIMENT, LONGYEARBYEN, SVALBARD
 
 This is the git repository for the paper: XXX et al. (not written yet).
 Plant traits, vegetation and carbon flux data from an elevation
