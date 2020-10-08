@@ -214,7 +214,8 @@ traits <- traits_in %>%
 # Join Area and Traits
 traits2018 <- traits %>%
   left_join(LeafArea2018, by = "ID") %>%
-  mutate(Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% # NA's introduced here, because characters (bulk)
+  mutate(Bulk_nr_leaves = ifelse(Bulk_nr_leaves %in% c("B", "D", "bulk"), NA_real_, Bulk_nr_leaves),
+         Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% # NA's introduced here, because characters (bulk)
   mutate(NrLeaves = ifelse(is.na(Bulk_nr_leaves), NumberLeavesScan, Bulk_nr_leaves)) %>%
 
   # Mark 24 leaves with missing area
@@ -439,21 +440,36 @@ traitsSV2018 <- traitsSV2018 %>%
 #setdiff(cnp_data$ID, traitsSV2018$ID)
 
 
-#### DIVID DATA INTO GRADIEN AND ITEX ####
-# Gradients
-traitsGradients_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "T",
-         Gradient != "X",
-         !is.na(Treatment)) %>%
-  select(-c(Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm,
-            Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm)) %>%
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
+#### DIVID DATA INTO TRAITS, BRYOPHYTES, BETULA NANA ####
+# prepare
+traitsSV2018 <- traitsSV2018 %>%
+  filter(!is.na(Taxon)) %>%  # NEED TO BE FIXES; BUT CHEMICAL TRAITS THAT DO NOT MATCH!!!
+  mutate(Project = case_when(Project == "T" & Gradient == "C" ~ "Gradient",
+                             Project == "T" & Gradient == "B" ~ "Birdcliff",
+                             Project == "T" & Gradient == "X" ~ "ITEX",
+                             Project == "T" & Gradient == "X" ~ "ITEX",
+                             Project == "Saxy" & Taxon == "betula nana" ~ "BetulaNana",
+                             Project == "M" ~ "Bryophytes",
+                             Project == "Sean" ~ "Leaf physiology"),
+
+         Gradient = case_when(Gradient == "B" ~ "Birdcliff",
+                              Gradient == "C" ~ "Control",
+                              Gradient %in% c("X", "P") ~ NA_character_),
+         Treatment = case_when(Treatment %in% c("B", "C", "P") ~ NA_character_)) %>%
+  # logical order
+  select(Country, Year, Date, Project, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Genus, Species, Latitude_N, Longitude_E, Elevation_m, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, C_percent, N_percent, CN_ratio, dN15_permil, dC13_permil, P_percent, Flag_corrected, Comment, Remark_CN, Data_entered_by) %>%
+  pivot_longer(cols = c(Plant_Height_cm:P_percent), names_to = "Trait", values_to = "Value") %>%
   filter(!is.na(Value))
+
+
+# Gradients, ITEX and Saxy
+plant_traits_SV_2018 <- traitsSV2018 %>%
+  filter(Project != "Bryophytes")
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/traits/"), dir.create("clean_data/traits/"), FALSE)
 
-write_csv(traitsGradients_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Traits_Gradients.csv", col_names = TRUE)
+write_csv(plant_traits_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Plant_traits.csv", col_names = TRUE)
 
 
 ggplot(traitsITEX_SV_2018, aes(x = Value, fill = Treatment)) +
@@ -461,44 +477,11 @@ ggplot(traitsITEX_SV_2018, aes(x = Value, fill = Treatment)) +
   facet_wrap(~ Trait, scales = "free")
 
 
-# Betula nana
-traitsBetulaNana_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "T",
-         is.na(Treatment)) %>%
-  select(-c(Treatment: Site, PlotID, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm,
-            Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm)) %>%
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
-  filter(!is.na(Value))
+# Bryophytes
+bryophyte_traits_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "Bryophytes")
 
-write_csv(traitsBetulaNana_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Traits_Betula_nana.csv", col_names = TRUE)
-
-# ITEX
-# 3 ind of Betula nana in the data, no Site, PlotID info etc.
-traitsITEX_SV_2018 <- traitsSV2018 %>%
-  filter(Gradient == "X",
-         !is.na(Treatment)) %>%
-  select(-c(Length_Ave_Moss_cm:GreenLength_3_cm, Gradient, Latitude_N:Elevation_m)) %>%
-  mutate(PlotID = str_extract(PlotID, "[0-9]+"),
-         PlotID = paste(Site, PlotID, sep = "-")) %>%
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
-  filter(!is.na(Value))
-
-write_csv(traitsITEX_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Traits_ITEX.csv", col_names = TRUE)
-
-
-# Mosses
-traitsGradients_Bryophytes_SV_2018 <- traitsSV2018 %>%
-  filter(Project %in% c("M")) %>%
-  select(Country:Treatment, Site, Gradient, Taxon:Individual_nr, Length_Ave_Moss_cm:GreenLength_3_cm, Comment, Data_entered_by) %>% View()
-
-write_csv(traitsGradients_Bryophytes_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Traits_Bryophytes.csv", col_names = TRUE)
-
-# # Saxy
-traitsSAXY_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "Saxy") %>%
-  select(-c(Length_Ave_Moss_cm:GreenLength_3_cm, Gradient, Latitude_N:Elevation_m)) %>%
-  mutate(Site = substr(PlotID, 1, 2))
-write_csv(traitsSAXY_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Traits_Saxy.csv", col_names = TRUE)
+write_csv(bryophyte_traits_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Bryophyte_traits.csv", col_names = TRUE)
 
 
 # counts
