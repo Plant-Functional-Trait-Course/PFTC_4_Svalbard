@@ -24,9 +24,7 @@ source("R/clean_raw_data/0_download_raw_data.R")
 ## Clean data and make clean files
 
 # climate
-source("R/clean_raw_data/Functions/load_TinyTags.R")
-source("R/clean_raw_data/Functions/load_weather_endalen.R")
-source("R/clean_raw_data/Functions/load_iButtons.R")
+source("R/clean_raw_data/Functions/Clean_ITEX_Climate.R")
 
 # community
 source("R/clean_raw_data/Functions/Clean_ITEX_Community.R")
