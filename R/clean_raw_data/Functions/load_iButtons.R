@@ -6,14 +6,16 @@
 metaItex <- read_csv(file = "clean_data/PFTC4_Svalbard_2018_metaItex.csv")
 
 # Read in raw files and clean
-ibutton <- list.files("raw_data/climate/DATA_ITEX_2015_2018/Plots_iButtons", recursive = TRUE, pattern = "\\.csv$", full.names = TRUE) %>%
+ibutton_raw <- list.files("raw_data/climate/DATA_ITEX_2015_2018/Plots_iButtons", recursive = TRUE, pattern = "\\.csv$", full.names = TRUE) %>%
   grep(pattern = "201608-201610|bis9|2016 downloads", x = ., invert = TRUE, value = TRUE) %>%
   set_names(.) %>%
   map_df(read.csv, skip = 19, stringsAsFactors = FALSE, .id = "files") %>%
-  #as_tibble() %>%
+  as_tibble()
+
+ibutton <- ibutton_raw %>%
   mutate(
     Date.Time = lubridate::dmy_hms(`Date.Time`),
-    Type = if_else(grepl("soil", files), "soil", "surface"),
+    LoggerLocation = if_else(grepl("soil", files), "soil", "surface"),
     PlotID = toupper(basename(files)),
     PlotID = str_replace(PlotID, "-", "_"),
     PlotID = str_replace(PlotID, ".CSV", ""),
@@ -37,21 +39,14 @@ ibutton <- list.files("raw_data/climate/DATA_ITEX_2015_2018/Plots_iButtons", rec
   select(-files) %>%
   # remove unrealistic values
   filter(Value < 55 & Value > -25) %>%
-  mutate(Value = if_else(Type == "soil" & DateTime < "2014-09-18 00:00:00", NA_real_, Value),
-         Value = if_else(Type == "surface" & DateTime < "2014-09-27 00:00:00", NA_real_, Value),
-         Value = if_else(Type == "surface" & PlotID == "CAS-4" & Value < -10, NA_real_, Value),
-         Value = if_else(Type == "surface" & PlotID == "BIS-2" & DateTime > "2018-07-08 00:00:00", NA_real_, Value)) %>%
+  mutate(Value = if_else(LoggerLocation == "soil" & DateTime < "2014-09-18 00:00:00", NA_real_, Value),
+         Value = if_else(LoggerLocation == "surface" & DateTime < "2014-09-27 00:00:00", NA_real_, Value),
+         Value = if_else(LoggerLocation == "surface" & PlotID == "CAS-4" & Value < -10, NA_real_, Value),
+         Value = if_else(LoggerLocation == "surface" & PlotID == "BIS-2" & DateTime > "2018-07-08 00:00:00", NA_real_, Value)) %>%
   filter(!is.na(Value)) %>%
-  mutate(Logger = "iButton") %>%
-  as_tibble()
+  mutate(Variable = "Temperature") %>%
+  select(DateTime, Site, Treatment, PlotID, LoggerLocation, Variable, Value)
 
-
-#### JOIN IBUTTON AND TINY TAGS DATA ####
-ItexSvalbard_Temp_2005_2015 <- TinyTag %>%
-  bind_rows(ibutton) %>%
-  mutate(Unit = if_else(is.na(Unit), "C", Unit))
-
-write_csv(ItexSvalbard_Temp_2005_2015, path = "clean_data/climate/ItexSvalbard_Temp_2005_2015.csv", col_names = TRUE)
 
 
 #ibutton <- setDT(ibutton)
