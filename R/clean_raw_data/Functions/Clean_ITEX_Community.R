@@ -15,22 +15,26 @@ sp <- sp %>%
 
 # Community data
 CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
-  gather(key = Spp, value = Abundance, -SUBSITE, -TREATMENT, -PLOT, -YEAR, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>%
+  pivot_longer(cols = -c(SUBSITE:YEAR, CRUST, `TOTAL-L`:SOIL), names_to = "Spp", values_to = "Abundance") %>%
+  # remove non occurrence
   filter(Abundance > 0) %>%
   rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>%
   mutate(Site2 = substr(Site, 5, 5),
          Site = substr(Site, 1, 3),
          PlotID = gsub("L", "", PlotID)) %>%
-  # I think we do not need/want H sites
+  # Select for site L. Site H is the northern site
   filter(Site2 == "L") %>%
   select(-Site2, -`TOTAL-L`, -LITTER, -REINDRO, -BIRDRO, -ROCK, -SOIL, -CRUST) %>%
   left_join(sp, by = c("Spp")) %>%
+  # Genus, species and taxon
   mutate(Genus = tolower(Genus),
+
          Species = tolower(Species),
          Species = if_else(is.na(Species), "sp", Species),
+
          Taxon = paste(Genus, Species, sep = " ")) %>%
-  mutate(Taxon = ifelse(Taxon == "NA oppositifolia", "saxifraga oppositifolia", Taxon)) %>%
-  mutate(Taxon = ifelse(Taxon == "festuca richardsonii", "festuca rubra", Taxon),
+  mutate(Taxon = ifelse(Taxon == "NA oppositifolia", "saxifraga oppositifolia", Taxon),
+         Taxon = ifelse(Taxon == "festuca richardsonii", "festuca rubra", Taxon),
          Taxon = ifelse(Taxon == "pedicularis hisuta", "pedicularis hirsuta", Taxon),
          Taxon = ifelse(Taxon == "alopecurus boreale", "alopecurus ovatus", Taxon),
          Taxon = ifelse(Taxon == "stellaria crassipes", "stellaria longipes", Taxon),
@@ -38,8 +42,22 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "oncophorus whalenbergii", "oncophorus wahlenbergii", Taxon),
          Taxon = ifelse(Taxon == "racomitrium canescence", "niphotrichum canescens", Taxon),
          Taxon = ifelse(Taxon == "pedicularis dashyantha", "pedicularis dasyantha", Taxon),
-         FunctionalGroup = if_else(Taxon == "ochrolechia frigida", "fungi", FunctionalGroup)) %>%
-  select(-Genus, -Species)
+         Taxon = ifelse(Taxon == "ptilidium ciliare ciliare", "ptilidium ciliare", Taxon),
+         Taxon = ifelse(Taxon == "moss unidentified sp", "unidentified moss sp", Taxon),
+         Taxon = ifelse(Taxon == "pleurocarp moss unidentified sp", "unidentified pleurocarp moss sp", Taxon),
+         Taxon = ifelse(Taxon == "polytrichum/polytrichastrum sp", "polytrichum_polytrichastrum sp", Taxon),
+
+         FunctionalGroup = if_else(Taxon == "ochrolechia frigida", "fungi", FunctionalGroup),
+         FunctionalGroup = if_else(Taxon == "forbsv", "forb", FunctionalGroup)) %>%
+
+  select(Year, Site:PlotID, Taxon, Abundance, FunctionalGroup) %>%
+  # rename site and plot names
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH"),
+         PlotID = str_replace(PlotID, "BIS", "SB"),
+         PlotID = str_replace(PlotID, "CAS", "CH"),
+         PlotID = str_replace(PlotID, "DRY", "DH"))
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/community/"), dir.create("clean_data/community/"), FALSE)
@@ -59,25 +77,39 @@ write_csv(CommunitySV_ITEX_2003_2015, path = "clean_data/community/ITEX_Svalbard
 
 
 ### CHECK SPECIES NAMES ###
-# checks <- tpl.get(unique(CommunitySV_ITEX_2003_2015$Taxon))
-# head(checks)
-# checks %>%
-#   filter(note == "was misspelled|replaced synonym|family not in APG")
+# check TNRS
+library("TNRS")
+dat <- CommunitySV_ITEX_2003_2015 %>%
+  distinct(Taxon) %>%
+  arrange(Taxon) %>%
+  rownames_to_column()
+results <- TNRS(taxonomic_names = dat, matches = "best")
+# get references from the search
+metadata <- TNRS_metadata(bibtex_file = "DataPaper/tnrs_citations.bib")
+metadata$version
+results %>% View()
+results %>%
+  filter(Taxonomic_status == "Synonym")
 
-# Replace synonym:
-# 1 Alopecurus magellanicus replaced synonym alopecurus ovatus
-# 2     Persicaria vivipara replaced synonym bistorta vivipara
-# 3          Luzula nivalis replaced synonym    luzula arctica
+TNRS(c("cetraria delisei"), matches = "all")
+# alopecurus ovatus not changing because Flora of Svalbard is using this name and tropico does not suggest this change
+# cetraria delisei Unsure...
+
 
 
 ### ITEX HEIGHT DATA (not sure if used)
 ItexHeight <- ItexHeight.raw %>%
-  select(SUBSITE, TREATMENT, PLOT, YEAR, HEIGHT) %>%
-  rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>%
+  select(Year = YEAR, Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Xcoord = XCOORD, Ycoord = YCOORD, Canopy_height = HEIGHT) %>%
   filter(Site %in% c("DRY-L", "CAS-L", "BIS-L")) %>%
   mutate(Site = gsub("-L", "", Site),
          PlotID = gsub("L", "", PlotID)) %>%
-  group_by(Year, Site, Treatment, PlotID) %>%
-  summarise(n = n(), Height_cm = mean(HEIGHT, na.rm = TRUE), se = sd(HEIGHT, na.rm = TRUE)/sqrt(n))
+  filter(!is.na(Canopy_height)) %>%
+  # rename site and plot names
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH"),
+         PlotID = str_replace(PlotID, "BIS", "SB"),
+         PlotID = str_replace(PlotID, "CAS", "CH"),
+         PlotID = str_replace(PlotID, "DRY", "DH"))
 
-write_csv(ItexHeight, path = "clean_data/community/ITEX_Svalbard_2003_2015_Height_cleaned.csv")
+write_csv(x = ItexHeight, file = "clean_data/community/ITEX_Svalbard_2003_2015_Height_cleaned.csv")
