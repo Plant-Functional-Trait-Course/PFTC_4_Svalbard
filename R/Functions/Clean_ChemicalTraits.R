@@ -139,14 +139,13 @@ CorrectedValues <- OriginalValues %>%
   left_join(CorrectionFactor, by = c("Batch", "Country")) %>%
   mutate(Pconc_Corrected = Pconc * Correction_Factor) %>%
   # Calculate mean, sd, coefficient of variation
-  group_by(Batch, Country, ID) %>%
+  group_by(Country, ID) %>%
   summarise(P_percent = mean(Pconc_Corrected, na.rm = TRUE),
             sdP_Corrected = sd(Pconc_Corrected, na.rm = TRUE),
             CoeffVarP_Corrected = sdP_Corrected / P_percent,
             N_replications = n()) %>%
   # flag data
   mutate(Flag_corrected = ifelse(CoeffVarP_Corrected >= 0.2, "flag", ""))
-
 
 
 ############################################################################
@@ -225,6 +224,8 @@ cn_data <- cn_isotopes %>%
 
 ############################################################################
 ### MERGE ###
+# remote sensing ids
+rm_ids <- read_delim("raw_data/remote_senseing_ids.txt", delim = ",")
 
 #setdiff(cn_data$ID, CorrectedValues$ID)
 cnp_data <- cn_data %>%
@@ -234,7 +235,12 @@ cnp_data <- cn_data %>%
   mutate(P_percent = if_else(P_percent > 5, NA_real_, P_percent),
          C_percent = if_else(C_percent > 60, NA_real_, C_percent),
          C_percent = if_else(C_percent < 20, NA_real_, C_percent)) %>%
-  mutate(Country = "SV")
+  mutate(Country = "SV") %>%
+  # remove duplicate rows
+  filter(!c(ID == "AWP5107" & is.na(C_percent)),
+         !c(ID == "AZR3297" & is.na(C_percent))) %>%
+  #remove remote sensing ids
+  anti_join(rm_ids, by = "ID")
 
 #setdiff(cnp_data$ID, all_codes$hashcode)
 cnp_data %>%
