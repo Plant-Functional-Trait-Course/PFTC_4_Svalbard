@@ -63,7 +63,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
 ifelse(!dir.exists("clean_data/community/"), dir.create("clean_data/community/"), FALSE)
 
 
-write_csv(CommunitySV_ITEX_2003_2015, path = "clean_data/community/ITEX_Svalbard_2003_2015_Community_cleaned.csv")
+write_csv(CommunitySV_ITEX_2003_2015, path = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Community.csv")
 
 
 # Check community data over time
@@ -112,4 +112,4 @@ ItexHeight <- ItexHeight.raw %>%
          PlotID = str_replace(PlotID, "CAS", "CH"),
          PlotID = str_replace(PlotID, "DRY", "DH"))
 
-write_csv(x = ItexHeight, file = "clean_data/community/ITEX_Svalbard_2003_2015_Height_cleaned.csv")
+write_csv(x = ItexHeight, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Height.csv")

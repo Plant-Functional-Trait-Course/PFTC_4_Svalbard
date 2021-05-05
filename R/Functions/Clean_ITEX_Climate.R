@@ -13,4 +13,4 @@ ItexSvalbard_Climate_2005_2018 <- bind_rows(WeatherStation = WeatherStation,
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/climate/"), dir.create("clean_data/climate/"), FALSE)
 
-write_csv(ItexSvalbard_Climate_2005_2018, file = "clean_data/climate/ItexSvalbard_Climate_2005_2018.csv")
+write_csv(ItexSvalbard_Climate_2005_2018, file = "clean_data/climate/PFTC4_Svalbard_2005_2018_ITEX_Climate.csv")
