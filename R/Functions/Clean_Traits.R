@@ -1,7 +1,7 @@
 #### CLEAN DATA ####
 
 # source import of chemical data
-source("R/clean_raw_data/Functions/Clean_ChemicalTraits.R")
+source("R/Functions/Clean_ChemicalTraits.R")
 
 # Source ITEX (for Site-Elevation comninations)
 #source(file = "community/ImportITEX.R")
@@ -212,7 +212,7 @@ traits <- traits_in %>%
 
 
 # Join Area and Traits
-traits2018 <- traits %>%
+traits_area <- traits %>%
   left_join(LeafArea2018, by = "ID") %>%
   mutate(Bulk_nr_leaves = ifelse(Bulk_nr_leaves %in% c("B", "D", "bulk"), NA_real_, Bulk_nr_leaves),
          Bulk_nr_leaves = as.numeric(Bulk_nr_leaves)) %>% # NA's introduced here, because characters (bulk)
@@ -227,7 +227,7 @@ traits2018 <- traits %>%
 
 
 #### CALCULATE SLA, LDMC AND FIX MORE STUFF ####
-traitsSV2018 <- traits2018 %>%
+traits_calculations <- traits_area %>%
   # Make variables consistent with China and Peru
   rename(Leaf_Area_cm2 = Area_cm2, Dry_Mass_g = Dry_mass_g, Wet_Mass_g = Wet_mass_g, Plant_Height_cm = Plant_height_cm, Leaf_Thickness_1_mm = Leaf_thickness_1_mm, Leaf_Thickness_2_mm = Leaf_thickness_2_mm, Leaf_Thickness_3_mm = Leaf_thickness_3_mm) %>%
 
@@ -311,16 +311,13 @@ traitsSV2018 <- traits2018 %>%
          Length_3_cm = if_else(ID == "CMP9835", 3.4, Length_3_cm)) %>%
 
   # Calculate SLA, LMDC
-  mutate(Leaf_Thickness_Ave_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
+  mutate(Leaf_Thickness_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
          SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
          LDMC = Dry_Mass_g / Wet_Mass_g) %>%
 
   # Measures for the mosses
-  mutate(Length_Ave_Moss_cm = (Length_1_cm + Length_2_cm + Length_3_cm)/3,
-         GreenLength_Ave_Moss_cm = (GreenLength_1_cm + GreenLength_2_cm + GreenLength_3_cm)/3) %>%
-  # should probably use something like this
-  #Length_Ave_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE)),
-  #GreenLength_Ave_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>%
+  mutate(Length_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE),
+         GreenLength_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>%
 
   # Flags and filter unrealistic trait values
   mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
@@ -347,7 +344,7 @@ traitsSV2018 <- traits2018 %>%
          Treatment = Gradient,
          Date = ymd(paste(Year, 7, Day, sep = "-"))) %>% # makes one NA, because Day was NA
 
-  # remove 2 species where PlotID is unknown
+  # remove 2 species where PlotID is unknown (CCK4783, AWN7480)
   filter(!(is.na(PlotID) & Site %in% c("CAS", "BIS"))) %>%
   # change one sp where site name was wrong (3)
   mutate(Site = if_else(Gradient == "X" & Site == "3", "DRY", Site)) %>%
@@ -359,17 +356,18 @@ traitsSV2018 <- traits2018 %>%
   mutate(Treatment = if_else(Gradient == "X", substr(PlotID, str_length(PlotID)-2, str_length(PlotID)), Treatment),
          PlotID = if_else(Project == "X", paste(Site, sub("\\-.*$","", PlotID), sep = "-"), PlotID)) %>%
   # fix AKZ0354
-  mutate(PlotID = if_else(ID == "AKZ0354", "8-OTC", PlotID)) %>%
+  mutate(PlotID = if_else(ID == "AKZ0354", "8-OTC", PlotID),
+         Treatment = if_else(ID == "AKZ0354", "OTC", Treatment),
+         Project = if_else(ID == "AKZ0354", "T", Project)) %>%
 
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>%
 
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
-
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Length_Moss_cm, GreenLength_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
 
 ### Add missing Individual_Nr for ITEX and gradients
-IndNr <- traitsSV2018 %>%
+IndNr <- traits_calculations %>%
   filter(Gradient %in% c("B", "C", "X"),
          Taxon != "betula nana") %>%
   distinct(Treatment, Site, PlotID, Taxon, Individual_nr) %>%
@@ -391,7 +389,7 @@ IndNr <- traitsSV2018 %>%
   select(-n, -nx)
 
 # Replace Ind
-traitsSV2018 <- traitsSV2018 %>%
+traits_calculations2 <- traits_calculations %>%
   left_join(IndNr, by = c("Treatment", "Site", "PlotID", "Taxon", "Individual_nr")) %>%
   mutate(Individual_nr = if_else(Gradient %in% c("B", "C", "X"), newIndNr, Individual_nr)) %>%
   select(-newIndNr)
@@ -430,58 +428,84 @@ traitsSV2018 <- traitsSV2018 %>%
 
 # These IDs are in the cnp but not trait data:
 # AQL4331 was deleted, because leaf was lost, obviously not
-# DBO4590, DEG1493, DEJ2799, DFE9019
+# !!! DBO4590, DEG1493, DEJ2799 !!!
 
 
 #### JOIN CNP AND TRAITS DATA ####
-traitsSV2018 <- traitsSV2018 %>%
-  full_join(cnp_data, by = c("ID", "Country"))
-
-#setdiff(cnp_data$ID, traitsSV2018$ID)
+traits_and_cnp <- traits_calculations2 %>%
+  distinct() %>%
+  left_join(cnp_data, by = c("ID", "Country"))
 
 
 #### DIVID DATA INTO TRAITS, BRYOPHYTES, BETULA NANA ####
 # prepare
-traitsSV2018 <- traitsSV2018 %>%
-  filter(!is.na(Taxon)) %>%  # NEED TO BE FIXES; BUT CHEMICAL TRAITS THAT DO NOT MATCH!!!
+traitsSV2018 <- traits_and_cnp %>%
   mutate(Project = case_when(Project == "T" & Gradient == "C" ~ "Gradient",
-                             Project == "T" & Gradient == "B" ~ "Birdcliff",
+                             Project == "T" & Gradient == "B" ~ "Gradient",
                              Project == "T" & Gradient == "X" ~ "ITEX",
                              Project == "T" & Gradient == "X" ~ "ITEX",
-                             Project == "Saxy" & Taxon == "betula nana" ~ "BetulaNana",
+                             Project == "Saxy" ~ "Saxy",
+                             Taxon == "betula nana" ~ "BetulaNana",
                              Project == "M" ~ "Bryophytes",
                              Project == "Sean" ~ "Leaf physiology"),
 
-         Gradient = case_when(Gradient == "B" ~ "Birdcliff",
+         Gradient = case_when(Gradient == "B" ~ "Nutrient",
                               Gradient == "C" ~ "Control",
                               Gradient %in% c("X", "P") ~ NA_character_),
-         Treatment = case_when(Treatment %in% c("B", "C", "P") ~ NA_character_)) %>%
+         Treatment = case_when(Treatment %in% c("B", "C", "P") ~ NA_character_,
+                               TRUE ~ Treatment)) %>%
+
+  # make long table
+  pivot_longer(cols = c(Plant_Height_cm:LDMC, Length_Moss_cm, GreenLength_Moss_cm, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
+  filter(!is.na(Value)) %>%
+
   # logical order
-  select(Country, Year, Date, Project, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Genus, Species, Latitude_N, Longitude_E, Elevation_m, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Length_Ave_Moss_cm, GreenLength_Ave_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, C_percent, N_percent, CN_ratio, dN15_permil, dC13_permil, P_percent, Flag_corrected, Comment, Remark_CN, Data_entered_by) %>%
-  pivot_longer(cols = c(Plant_Height_cm:P_percent), names_to = "Trait", values_to = "Value") %>%
-  filter(!is.na(Value))
+  select(Year, Date, Project, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Trait, Value, Elevation_m, Latitude_N, Longitude_E, Comment) %>%
+  distinct()
 
 
-# Gradients, ITEX and Saxy
-plant_traits_SV_2018 <- traitsSV2018 %>%
-  filter(Project != "Bryophytes")
+# # Checks with plots
+# traitsSV2018 %>%
+#   pivot_wider(names_from = Trait, values_from = Value) %>%
+#   ggplot(aes(x = log(Wet_Mass_g), y = log(Dry_Mass_g))) +
+#   geom_point() +
+#   facet_wrap(~ Project)
+#
+# traitsSV2018 %>%
+#   pivot_wider(names_from = Trait, values_from = Value) %>%
+#   ggplot(aes(x = log(Leaf_Area_cm2), y = log(Dry_Mass_g))) +
+#   geom_point() +
+#   facet_wrap(~ Project)
+#
+# traitsSV2018 %>%
+#   pivot_wider(names_from = Trait, values_from = Value) %>%
+#   ggplot(aes(x = C_percent, y = dC13_permil, colour = C_percent < 25)) +
+#   geom_point() +
+#   facet_wrap(~ Project)
+#
+# traitsSV2018 %>%
+#   filter(!is.na(Gradient)) %>%
+#   ggplot(aes(x = Value, fill = Site)) +
+#   geom_density(alpha = 0.5) +
+#   facet_wrap(~ Trait, scales = "free")
+#
+
+# Vascular plant and bryophyte traits from Gradients
+Gradient_traits_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "Gradient") %>%
+  select(-Treatment)
+
+# Vascular plant and bryophyte traits from ITEX
+ITEX_traits_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "ITEX") %>%
+  select(-Gradient)
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/traits/"), dir.create("clean_data/traits/"), FALSE)
 
-write_csv(plant_traits_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Plant_traits.csv", col_names = TRUE)
+write_csv(Gradient_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_Gradient_Traits.csv")
 
-
-ggplot(traitsITEX_SV_2018, aes(x = Value, fill = Treatment)) +
-  geom_density(alpha = 0.7) +
-  facet_wrap(~ Trait, scales = "free")
-
-
-# Bryophytes
-bryophyte_traits_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "Bryophytes")
-
-write_csv(bryophyte_traits_SV_2018, path = "clean_data/traits/PFTC4_Svalbard_2018_Bryophyte_traits.csv", col_names = TRUE)
+write_csv(ITEX_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_ITEX_Traits.csv")
 
 
 # counts
