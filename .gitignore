@@ -36,6 +36,7 @@ vignettes/*.pdf
 
 # data
 !envelope_codes.Rdata
+!raw_data/remote_senseing_ids.txt
 *.Rdata
 *.xls
 *.xlsx
