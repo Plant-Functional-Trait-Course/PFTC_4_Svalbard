@@ -25,10 +25,11 @@ source("R/clean_raw_data/0_download_raw_data.R")
 
 # climate
 source("R/Functions/Clean_ITEX_Climate.R")
+source("R/Functions/Clean_Gradient_Climate.R")
 
 # community
 source("R/Functions/Clean_ITEX_Community.R")
-source("R/Functions/clean_community_gradient.R")
+source("R/Functions/Clean_Gradient_Community.R")
 
 # traits
 source("R/clean_raw_data/Functions/Clean_Traits.R")
