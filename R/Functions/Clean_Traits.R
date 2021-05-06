@@ -10,9 +10,10 @@ source("R/Functions/Clean_ChemicalTraits.R")
 
 
 #### READ IN DATA SETS ####
-coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx", col_names = TRUE)
+coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx")
+meta <- read_csvl(file = "clean_data/PFTC4_Svalbard_2018_metaItex.csv")
 traits_in <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_LeafTrait_with_DM.csv")
-LeafArea2018 <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_Raw_LeafArea.csv", col_names = TRUE)
+LeafArea2018 <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_Raw_LeafArea.csv")
 
 
 ########################################################################
@@ -354,7 +355,7 @@ traits_calculations <- traits_area %>%
 
   # Fix PlotID and Treatment for ITEX
   mutate(Treatment = if_else(Gradient == "X", substr(PlotID, str_length(PlotID)-2, str_length(PlotID)), Treatment),
-         PlotID = if_else(Project == "X", paste(Site, sub("\\-.*$","", PlotID), sep = "-"), PlotID)) %>%
+         PlotID = if_else(Gradient == "X", paste(Site, sub("\\-.*$","", PlotID), sep = "-"), PlotID)) %>%
   # fix AKZ0354
   mutate(PlotID = if_else(ID == "AKZ0354", "8-OTC", PlotID),
          Treatment = if_else(ID == "AKZ0354", "OTC", Treatment),
@@ -458,6 +459,13 @@ traitsSV2018 <- traits_and_cnp %>%
                               Gradient %in% c("X", "P") ~ NA_character_),
          Treatment = case_when(Treatment %in% c("B", "C", "P") ~ NA_character_,
                                TRUE ~ Treatment)) %>%
+  # rename site and plot names
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH"),
+         PlotID = str_replace(PlotID, "BIS", "SB"),
+         PlotID = str_replace(PlotID, "CAS", "CH"),
+         PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
   # make long table
   pivot_longer(cols = c(Plant_Height_cm:LDMC, Length_Moss_cm, GreenLength_Moss_cm, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
