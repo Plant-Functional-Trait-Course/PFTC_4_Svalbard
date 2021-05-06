@@ -53,7 +53,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
          Taxon = ifelse(Taxon == "polytrichum/polytrichastrum sp", "polytrichum_polytrichastrum sp", Taxon),
 
          FunctionalGroup = if_else(Taxon == "ochrolechia frigida", "fungi", FunctionalGroup),
-         FunctionalGroup = if_else(Taxon == "forbsv", "forb", FunctionalGroup)) %>%
+         FunctionalGroup = if_else(FunctionalGroup == "forbsv", "forb", FunctionalGroup)) %>%
   # add coords
   left_join(coords %>% select(-Project), by = c("Treatment" , "Site")) %>%
 
