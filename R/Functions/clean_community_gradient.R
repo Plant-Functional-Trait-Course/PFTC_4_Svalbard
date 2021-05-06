@@ -41,7 +41,7 @@ community_gradient <- community_gradient_raw %>%
   left_join(coords, by = c("Gradient" , "Site")) %>%
   select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Flowering, Weather, Elevation_m:Longitude_E)
 
-write_csv(community_gradient, path = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
+write_csv(community_gradient, file = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
 
 
 # # Check taxonomy
