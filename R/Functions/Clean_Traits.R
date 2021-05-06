@@ -403,6 +403,10 @@ traits_calculations2 <- traits_calculations %>%
 #
 # tnrsCheck <- tnrs(query = unique(traitsSV2018$Taxon), source = "iPlant_TNRS")
 # head(tnrsCheck)
+# library(TNRS)
+# spList <- traitsSV2018 %>% distinct(Taxon)
+# result <- TNRS(spList$Taxon)
+# result %>% filter(Taxonomic_status == "Synonym")
 
 # replaced synonym
 #1     Persicaria vivipara replaced synonym      bistorta vivipara
@@ -444,7 +448,7 @@ traitsSV2018 <- traits_and_cnp %>%
                              Project == "T" & Gradient == "B" ~ "Gradient",
                              Project == "T" & Gradient == "X" ~ "ITEX",
                              Project == "T" & Gradient == "X" ~ "ITEX",
-                             Project == "Saxy" ~ "Saxy",
+                             Project == "Saxy" ~ "Poliploidy",
                              Taxon == "betula nana" ~ "BetulaNana",
                              Project == "M" ~ "Bryophytes",
                              Project == "Sean" ~ "Leaf physiology"),
@@ -499,6 +503,11 @@ Gradient_traits_SV_2018 <- traitsSV2018 %>%
 ITEX_traits_SV_2018 <- traitsSV2018 %>%
   filter(Project == "ITEX") %>%
   select(-Gradient)
+
+# Saxy traits from Poliploidy study
+Poliploidy_traits_SV_2018 <- traitsSV2018 %>%
+  filter(Project == "Poliploidy") %>%
+  select(-Gradient, -Site, -Treatment)
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/traits/"), dir.create("clean_data/traits/"), FALSE)
