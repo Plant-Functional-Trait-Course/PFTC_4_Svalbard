@@ -5,6 +5,11 @@ ItexAbundance.raw <- read_excel(path = "raw_data/community/ENDALEN_ALL-YEARS_Tra
 ItexHeight.raw <- read_excel(path = "raw_data/community/ENDALEN_ALL-YEARS_TraitTrain.xlsx", sheet = "HEIGHT")
 sp <- read_excel(path = "raw_data/community/Species lists_Iceland_Svalbard.xlsx", sheet = "Endalen")
 
+# coordinates
+coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx") %>%
+  filter(Project == "T",
+         Site %in% c("CAS", "BIS", "DRY") |is.na(Site))
+
 
 # Species names
 sp <- sp %>%
@@ -49,8 +54,10 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
 
          FunctionalGroup = if_else(Taxon == "ochrolechia frigida", "fungi", FunctionalGroup),
          FunctionalGroup = if_else(Taxon == "forbsv", "forb", FunctionalGroup)) %>%
+  # add coords
+  left_join(coords %>% select(-Project), by = c("Treatment" , "Site")) %>%
 
-  select(Year, Site:PlotID, Taxon, Abundance, FunctionalGroup) %>%
+  select(Year, Site:PlotID, Taxon, Abundance, FunctionalGroup, Elevation_m:Longitude_E) %>%
   # rename site and plot names
   mutate(Site = case_when(Site == "BIS" ~ "SB",
                           Site == "CAS" ~ "CH",
@@ -63,7 +70,7 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
 ifelse(!dir.exists("clean_data/community/"), dir.create("clean_data/community/"), FALSE)
 
 
-write_csv(CommunitySV_ITEX_2003_2015, path = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Community.csv")
+write_csv(CommunitySV_ITEX_2003_2015, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Community.csv")
 
 
 # Check community data over time
@@ -77,21 +84,21 @@ write_csv(CommunitySV_ITEX_2003_2015, path = "clean_data/community/PFTC4_Svalbar
 
 
 ### CHECK SPECIES NAMES ###
-# check TNRS
-library("TNRS")
-dat <- CommunitySV_ITEX_2003_2015 %>%
-  distinct(Taxon) %>%
-  arrange(Taxon) %>%
-  rownames_to_column()
-results <- TNRS(taxonomic_names = dat, matches = "best")
-# get references from the search
-metadata <- TNRS_metadata(bibtex_file = "DataPaper/tnrs_citations.bib")
-metadata$version
-results %>% View()
-results %>%
-  filter(Taxonomic_status == "Synonym")
-
-TNRS(c("cetraria delisei"), matches = "all")
+# # check TNRS
+# library("TNRS")
+# dat <- CommunitySV_ITEX_2003_2015 %>%
+#   distinct(Taxon) %>%
+#   arrange(Taxon) %>%
+#   rownames_to_column()
+# results <- TNRS(taxonomic_names = dat, matches = "best")
+# # get references from the search
+# metadata <- TNRS_metadata(bibtex_file = "DataPaper/tnrs_citations.bib")
+# metadata$version
+# results %>% View()
+# results %>%
+#   filter(Taxonomic_status == "Synonym")
+#
+# TNRS(c("cetraria delisei"), matches = "all")
 # alopecurus ovatus not changing because Flora of Svalbard is using this name and tropico does not suggest this change
 # cetraria delisei Unsure...
 
