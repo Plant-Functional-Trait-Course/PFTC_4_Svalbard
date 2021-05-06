@@ -462,8 +462,9 @@ traitsSV2018 <- traits_and_cnp %>%
   # rename site and plot names
   mutate(Site = case_when(Site == "BIS" ~ "SB",
                           Site == "CAS" ~ "CH",
-                          Site == "DRY" ~ "DH"),
-         PlotID = str_replace(PlotID, "BIS", "SB"),
+                          Site == "DRY" ~ "DH",
+                          TRUE ~ Site)) %>%
+  mutate(PlotID = str_replace(PlotID, "BIS", "SB"),
          PlotID = str_replace(PlotID, "CAS", "CH"),
          PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
