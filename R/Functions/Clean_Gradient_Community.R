@@ -31,15 +31,20 @@ community_gradient <- community_gradient_raw %>%
   mutate(Taxon = if_else(Taxon %in% c("Draba nivalis", "Draba oxycarpa", "Draba sp1", "Draba sp2"), Draba, Taxon),
          Taxon = if_else(Taxon == "No Drabas", "Unknown sp", Taxon)) %>%
   # Fix Cover column
-  separate(Cover, into = c("Cover", "Flowering"), sep = "_") %>%
+  separate(Cover, into = c("Cover", "Fertile"), sep = "_") %>%
   mutate(Cover = str_replace_all(Cover, " ", ""),
          Cover = as.numeric(Cover),
-         Flowering = as.numeric(Flowering),
+         Fertile = as.numeric(Fertile),
          Year = 2018,
-         Taxon = tolower(Taxon)) %>%
+         Taxon = tolower(Taxon),
+         Weather = case_when(Weather == "Sunny" ~ "sunny",
+                             Weather == "partly cloudy" ~ "partly_cloudy",
+                             Weather %in% c("windy_cloudy", "cloudy_little_wind", "cloudy_wind_SW_partly_sunny", "cloudy_wind") ~ "cloudy_windy",
+                             Weather == "partly cloudy" ~ "partly_cloudy",
+                             TRUE ~ Weather)) %>%
   # add coords
   left_join(coords, by = c("Gradient" , "Site")) %>%
-  select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Flowering, Weather, Elevation_m:Longitude_E)
+  select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Fertile, Weather, Elevation_m:Longitude_E)
 
 write_csv(community_gradient, file = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
 
