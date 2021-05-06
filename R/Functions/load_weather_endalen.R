@@ -61,7 +61,8 @@ WeatherStation <- list.files(path = "raw_data/climate/DATA_ITEX_2015_2018/Hobo_w
   select(-n, -file) %>%
   # remove last day
   filter(!grepl("2018-09-19", DateTime)) %>%
-  mutate(LoggerLocation = "air") %>%
+  mutate(LoggerLocation = "air",
+         LoggerType = "WeatherStation") %>%
   pivot_longer(cols = c(PAR, WaterContent, Temperature, RelHumidity, SolarRadiation),
                names_to = "Variable",
                values_to = "Value")
