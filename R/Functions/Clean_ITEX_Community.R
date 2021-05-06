@@ -108,11 +108,11 @@ write_csv(CommunitySV_ITEX_2003_2015, file = "clean_data/community/PFTC4_Svalbar
 
 ### ITEX HEIGHT DATA (not sure if used)
 ItexHeight <- ItexHeight.raw %>%
-  select(Year = YEAR, Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Xcoord = XCOORD, Ycoord = YCOORD, Canopy_height = HEIGHT) %>%
+  select(Year = YEAR, Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Xcoord = XCOORD, Ycoord = YCOORD, Vegetation_height = HEIGHT) %>%
   filter(Site %in% c("DRY-L", "CAS-L", "BIS-L")) %>%
   mutate(Site = gsub("-L", "", Site),
          PlotID = gsub("L", "", PlotID)) %>%
-  filter(!is.na(Canopy_height)) %>%
+  filter(!is.na(Vegetation_height)) %>%
   # rename site and plot names
   mutate(Site = case_when(Site == "BIS" ~ "SB",
                           Site == "CAS" ~ "CH",
@@ -121,4 +121,4 @@ ItexHeight <- ItexHeight.raw %>%
          PlotID = str_replace(PlotID, "CAS", "CH"),
          PlotID = str_replace(PlotID, "DRY", "DH"))
 
-write_csv(x = ItexHeight, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Height.csv")
+write_csv(ItexHeight, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Height.csv")
