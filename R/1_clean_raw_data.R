@@ -24,10 +24,11 @@ source("R/clean_raw_data/0_download_raw_data.R")
 ## Clean data and make clean files
 
 # climate
-source("R/clean_raw_data/Functions/Clean_ITEX_Climate.R")
+source("R/Functions/Clean_ITEX_Climate.R")
 
 # community
-source("R/clean_raw_data/Functions/Clean_ITEX_Community.R")
+source("R/Functions/Clean_ITEX_Community.R")
+source("R/Functions/clean_community_gradient.R")
 
 # traits
 source("R/clean_raw_data/Functions/Clean_Traits.R")
