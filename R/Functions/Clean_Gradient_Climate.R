@@ -4,7 +4,8 @@ soil_climate_raw <- read_delim(file = "raw_data/climate/PFTC4_SV_2018_SM.csv",
                                delim = ";", locale = locale(decimal_mark = "."))
 
 gradient_climate <- soil_climate_raw %>%
-  mutate(LoggerType = "iButton",
+  mutate(Year = 2018,
+         LoggerType = "iButton",
          LoggerLocation = "soil") %>%
   mutate(Gradient = str_sub(plot, 1, 1),
          Site = str_sub(plot, 2, 2),
