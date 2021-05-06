@@ -10,7 +10,9 @@ draba_dic <- read_excel(path = "raw_data/community/PFTC4_Svalbard_2018_Draba_dic
 
 # coordinates
 coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx") %>%
-  filter(Project == "T") %>%
+  filter(Project == "T",
+         !Site %in% c("CAS", "BIS", "DRY"),
+         !is.na(Site)) %>%
   rename(Gradient = Treatment) %>%
   mutate(Site = as.numeric(Site))
 
@@ -32,9 +34,29 @@ community_gradient <- community_gradient_raw %>%
   separate(Cover, into = c("Cover", "Flowering"), sep = "_") %>%
   mutate(Cover = str_replace_all(Cover, " ", ""),
          Cover = as.numeric(Cover),
-         Flowering = as.numeric(Flowering)) %>%
+         Flowering = as.numeric(Flowering),
+         Year = 2018,
+         Taxon = tolower(Taxon)) %>%
   # add coords
   left_join(coords, by = c("Gradient" , "Site")) %>%
-  select(-Draba, -Precense, -Project)
+  select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Flowering, Weather, Elevation_m:Longitude_E)
 
 write_csv(community_gradient, path = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
+
+
+# # Check taxonomy
+# library(TNRS)
+# sp_list_g <- community_gradient %>%
+#   distinct(Taxon)
+#
+# result <- TNRS(spList$Taxon)
+#
+# # get references from the search
+# metadata <- TNRS_metadata(bibtex_file = "DataPaper/tnrs_citations_gradient.bib")
+# metadata$version
+# result %>% distinct(Taxonomic_status)
+# result %>%
+#   filter(Taxonomic_status == "Synonym")
+
+
+
