@@ -64,7 +64,9 @@ CommunitySV_ITEX_2003_2015 <- ItexAbundance.raw %>%
                           Site == "DRY" ~ "DH"),
          PlotID = str_replace(PlotID, "BIS", "SB"),
          PlotID = str_replace(PlotID, "CAS", "CH"),
-         PlotID = str_replace(PlotID, "DRY", "DH"))
+         PlotID = str_replace(PlotID, "DRY", "DH")) %>%
+  # flag iced Cassiope plots
+  mutate(Flag = if_else(PlotID %in% c("CH-4", "CH-6", "CH-9", "CH-10"), "Iced", NA_character_))
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/community/"), dir.create("clean_data/community/"), FALSE)
