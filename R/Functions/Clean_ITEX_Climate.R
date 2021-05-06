@@ -7,7 +7,14 @@ source("R/Functions/load_iButtons.R")
 
 ItexSvalbard_Temperature_2005_2018 <- bind_rows(TinyTag = TinyTag,
                                             iButton = ibutton,
-                                            .id = "LoggerType")
+                                            .id = "LoggerType") %>%
+  # rename site and plot names
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH"),
+         PlotID = str_replace(PlotID, "BIS", "SB"),
+         PlotID = str_replace(PlotID, "CAS", "CH"),
+         PlotID = str_replace(PlotID, "DRY", "DH"))
 
 # Create new folder if not there yet
 ifelse(!dir.exists("clean_data/climate/"), dir.create("clean_data/climate/"), FALSE)
