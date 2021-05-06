@@ -448,7 +448,7 @@ traitsSV2018 <- traits_and_cnp %>%
                              Project == "T" & Gradient == "B" ~ "Gradient",
                              Project == "T" & Gradient == "X" ~ "ITEX",
                              Project == "T" & Gradient == "X" ~ "ITEX",
-                             Project == "Saxy" ~ "Poliploidy",
+                             Project == "Saxy" ~ "Polyploidy",
                              Taxon == "betula nana" ~ "BetulaNana",
                              Project == "M" ~ "Bryophytes",
                              Project == "Sean" ~ "Leaf physiology"),
@@ -515,6 +515,8 @@ ifelse(!dir.exists("clean_data/traits/"), dir.create("clean_data/traits/"), FALS
 write_csv(Gradient_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_Gradient_Traits.csv")
 
 write_csv(ITEX_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_ITEX_Traits.csv")
+
+write_csv(Poliploidy_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_Polyploidy_Traits.csv")
 
 
 # counts
