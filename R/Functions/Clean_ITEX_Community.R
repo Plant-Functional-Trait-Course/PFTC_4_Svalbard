@@ -106,19 +106,73 @@ write_csv(CommunitySV_ITEX_2003_2015, file = "clean_data/community/PFTC4_Svalbar
 
 
 
-### ITEX HEIGHT DATA (not sure if used)
+### ITEX HEIGHT DATA
 ItexHeight <- ItexHeight.raw %>%
   select(Year = YEAR, Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Xcoord = XCOORD, Ycoord = YCOORD, Vegetation_height = HEIGHT) %>%
   filter(Site %in% c("DRY-L", "CAS-L", "BIS-L")) %>%
   mutate(Site = gsub("-L", "", Site),
          PlotID = gsub("L", "", PlotID)) %>%
   filter(!is.na(Vegetation_height)) %>%
+  left_join(coords, by = c("Site", "Treatment")) %>%
   # rename site and plot names
   mutate(Site = case_when(Site == "BIS" ~ "SB",
                           Site == "CAS" ~ "CH",
-                          Site == "DRY" ~ "DH"),
+                          Site == "DRY" ~ "DH",
+                          TRUE ~ Site),
          PlotID = str_replace(PlotID, "BIS", "SB"),
          PlotID = str_replace(PlotID, "CAS", "CH"),
-         PlotID = str_replace(PlotID, "DRY", "DH"))
+         PlotID = str_replace(PlotID, "DRY", "DH")) %>%
+  select(-Project, -New_Site_name) %>%
+  # flag iced Cassiope plots
+  mutate(Flag = if_else(PlotID %in% c("CH-4", "CH-6", "CH-9", "CH-10"), "Iced", NA_character_),
+         Variable = "MedianHeight_cm") %>%
+  rename(Value = Vegetation_height)
 
-write_csv(ItexHeight, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Height.csv")
+
+ItexStructure <- ItexAbundance.raw %>%
+  select(-"TOTAL-L") %>%
+    pivot_longer(cols = ALENIG:SOIL, names_to = "Spp", values_to = "Abundance") %>%
+    # remove non occurrence
+    filter(Abundance > 0) %>%
+    rename(Site = SUBSITE, Treatment = TREATMENT, PlotID = PLOT, Year = YEAR) %>%
+    mutate(Site2 = substr(Site, 5, 5),
+           Site = substr(Site, 1, 3),
+           PlotID = gsub("L", "", PlotID)) %>%
+    # Select for site L. Site H is the northern site
+    filter(Site2 == "L") %>%
+    select(-Site2) %>%
+    left_join(sp, by = c("Spp")) %>%
+  mutate(FunctionalGroup = case_when(is.na(FunctionalGroup) & Spp == "OCHFRI" ~ "Fungi",
+                                     FunctionalGroup == "lichen" ~ "Lichen",
+                                     FunctionalGroup %in% c("moss", "liverwort") ~ "Bryophyes",
+                                     FunctionalGroup == "forbsv" ~ "Forbs",
+                                     FunctionalGroup == "eshrub" ~ "Evergreen",
+                                     FunctionalGroup == "graminoid" ~ "Graminoid",
+                                     FunctionalGroup == "dshrub" ~ "Decidious",
+                                     is.na(FunctionalGroup) & Spp == "LITTER" ~ "Litter",
+                                     is.na(FunctionalGroup) & Spp == "ROCK" ~ "Rock",
+                                     is.na(FunctionalGroup) & Spp == "CRUST" ~ "BioCrust",
+                                     is.na(FunctionalGroup) & Spp == "SOIL" ~ "BareGround",
+                                     is.na(FunctionalGroup) & Spp == "REINDRO" ~ "ReindeerDropping",
+                                     is.na(FunctionalGroup) & Spp == "BIRDRO" ~ "BirdDropping",
+                                     TRUE ~ FunctionalGroup)) %>%
+  # sum abundance for each FunctionalGroup
+  group_by(Year, Site, Treatment, PlotID, FunctionalGroup) %>%
+  summarise(Abundance = sum(Abundance)) %>%
+  left_join(coords %>% select(-Project), by = c("Treatment" , "Site")) %>%
+  select(-New_Site_name) %>%
+  # rename site and plot names
+  mutate(Site = case_when(Site == "BIS" ~ "SB",
+                          Site == "CAS" ~ "CH",
+                          Site == "DRY" ~ "DH",
+                          TRUE ~ Site),
+           PlotID = str_replace(PlotID, "BIS", "SB"),
+           PlotID = str_replace(PlotID, "CAS", "CH"),
+           PlotID = str_replace(PlotID, "DRY", "DH")) %>%
+    # flag iced Cassiope plots
+    mutate(Flag = if_else(PlotID %in% c("CH-4", "CH-6", "CH-9", "CH-10"), "Iced", NA_character_)) %>%
+  rename(Variable = FunctionalGroup, Value = Abundance) %>%
+  bind_rows(ItexHeight)
+
+
+write_csv(ItexStructure, file = "clean_data/community/PFTC4_Svalbard_2003_2015_ITEX_Vegetation_Structure.csv")
