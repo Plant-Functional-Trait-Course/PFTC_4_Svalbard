@@ -70,7 +70,7 @@ write_csv(community_gradient, file = "clean_data/community/PFTC4_Svalbard_2018_C
 
 # Read in files
 comm_structure_gradient <- community_gradient_raw %>%
-  select(Day, Gradient = Site, Site = Elevation, PlotID = Plot, MedianHeight_cm:Litter) %>%
+  select(Day, Gradient = Site, Site = Elevation, PlotID = Plot, MedianHeight_cm, MaxHeight_cm = Max_height_cm, Vascular:Litter) %>%
   filter(!is.na(Site)) %>%
   mutate(Date = dmy(paste(Day, "07", "18", sep = "-")),
          Year = 2018) %>%
@@ -79,6 +79,7 @@ comm_structure_gradient <- community_gradient_raw %>%
          Lichen_rock = as.numeric(Lichen_rock)) %>%
   left_join(coords, by = c("Gradient", "Site")) %>%
   pivot_longer(cols = MedianHeight_cm:Litter, names_to = "Variable", values_to = "Value") %>%
+  filter(!is.na(Value)) %>%
   select(Year, Date, Gradient, Site, PlotID, Variable, Value, Elevation_m:Longitude_E)
 
 
