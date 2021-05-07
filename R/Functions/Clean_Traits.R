@@ -364,7 +364,7 @@ traits_calculations <- traits_area %>%
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>%
 
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Length_Moss_cm, GreenLength_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
 
 ### Add missing Individual_Nr for ITEX and gradients
@@ -469,7 +469,7 @@ traitsSV2018 <- traits_and_cnp %>%
          PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
   # make long table
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, Length_Moss_cm, GreenLength_Moss_cm, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
+  pivot_longer(cols = c(Plant_Height_cm:LDMC, Shoot_Length_cm, Shoot_Length_Green_cm, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
   filter(!is.na(Value)) %>%
 
   # logical order (removing Comment!!!)
