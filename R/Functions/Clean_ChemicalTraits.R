@@ -235,7 +235,8 @@ cnp_data <- cn_data %>%
   mutate(P_percent = if_else(P_percent > 5, NA_real_, P_percent),
          C_percent = if_else(C_percent > 60, NA_real_, C_percent),
          C_percent = if_else(C_percent < 20, NA_real_, C_percent)) %>%
-  mutate(Country = "SV") %>%
+  mutate(Country = "SV",
+         NP_ratio = N_percent / P_percent) %>%
   # remove duplicate rows
   filter(!c(ID == "AWP5107" & is.na(C_percent)),
          !c(ID == "AZR3297" & is.na(C_percent))) %>%

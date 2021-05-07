@@ -454,9 +454,9 @@ traitsSV2018 <- traits_and_cnp %>%
                              Project == "M" ~ "Bryophytes",
                              Project == "Sean" ~ "Leaf physiology"),
 
-         Gradient = case_when(Gradient == "B" ~ "Nutrient",
-                              Gradient == "C" ~ "Control",
-                              Gradient %in% c("X", "P") ~ NA_character_),
+         Gradient = case_when(Gradient == "B" ~ "B",
+                              Gradient == "C" ~ "C",
+                              TRUE ~ NA_character_),
          Treatment = case_when(Treatment %in% c("B", "C", "P") ~ NA_character_,
                                TRUE ~ Treatment)) %>%
   # rename site and plot names
@@ -469,11 +469,11 @@ traitsSV2018 <- traits_and_cnp %>%
          PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
   # make long table
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, Length_Moss_cm, GreenLength_Moss_cm, C_percent:P_percent), names_to = "Trait", values_to = "Value") %>%
+  pivot_longer(cols = c(Plant_Height_cm:LDMC, Length_Moss_cm, GreenLength_Moss_cm, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
   filter(!is.na(Value)) %>%
 
-  # logical order
-  select(Year, Date, Project, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Trait, Value, Elevation_m, Latitude_N, Longitude_E, Comment) %>%
+  # logical order (removing Comment!!!)
+  select(Project, Year, Date, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Trait, Value, Elevation_m, Latitude_N, Longitude_E) %>%
   distinct()
 
 
@@ -505,7 +505,7 @@ traitsSV2018 <- traits_and_cnp %>%
 
 # Vascular plant and bryophyte traits from Gradients
 Gradient_traits_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "Gradient") %>%
+  filter(Project %in% c("Gradient", "Bryophytes")) %>%
   select(-Treatment)
 
 # Vascular plant and bryophyte traits from ITEX
@@ -527,8 +527,3 @@ write_csv(ITEX_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_ITE
 
 write_csv(Poliploidy_traits_SV_2018, file = "clean_data/traits/PFTC4_Svalbard_2018_Polyploidy_Traits.csv")
 
-
-# counts
-dim(traits2018) # 1696
-traits2018 %>% distinct(Taxon) # 45 species
-traits2018 %>% group_by(Taxon) %>% count() %>% pn
