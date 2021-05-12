@@ -21,24 +21,26 @@ ColumnNames <- read_excel(path = "raw_data/climate/DATA_ITEX_2015_2018/TinyTag_l
   t() %>%
   as_tibble()
 
-dat <- read_excel(path = "raw_data/climate/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE, skip = 7) %>%
-  select(-"...52")
-colnames(dat) <- ColumnNames
+tinytag_raw <- read_excel(path = "raw_data/climate/DATA_ITEX_2015_2018/TinyTag_loggers/2005 Temp Data.xls", sheet = "DATA", col_names = FALSE, skip = 7) %>%
+  select(-"...51", -"...52")
+colnames(tinytag_raw) <- ColumnNames
 
-TinyTag <- dat %>%
+TinyTag <- tinytag_raw %>%
   rename("DateTime" = "Location_Treatment_Logger (June)_Logger (August)_Soil/Surface") %>%
+  # some text in this col, make numeric, warning message ok
   mutate(`BIS L4_OTC_22_22_surface` = as.numeric(`BIS L4_OTC_22_22_surface`)) %>%
   pivot_longer(cols = c(-DateTime), names_to = "Treatment", values_to = "Value") %>%
   filter(!is.na(Value)) %>%
   filter(grepl("OTC|CTL", Treatment)) %>%
-  separate(col = Treatment, into = c("Site", "PlotID", "Treatment", "LoggerID_Jun", "LoggerID_Aug", "Type"), sep = " |_") %>%
+  separate(col = Treatment, into = c("Site", "PlotID", "Treatment", "LoggerID_Jun", "LoggerID_Aug", "LoggerLocation"), sep = " |_") %>%
   mutate(PlotID = gsub("L", "", PlotID),
          PlotID = paste(Site, PlotID, sep = "-"),
-         Logger = "TinyTag") %>%
+         Variable = "Temperature") %>%
   # clean data: CAS-9
   mutate(Value = if_else(PlotID == "CAS-9" & DateTime > "2005-06-06 01:00:00" & DateTime < "2005-06-28 23:00:00", NA_real_, Value),
          Value = if_else(PlotID == "CAS-9" & DateTime > "2005-08-08 01:00:00", NA_real_, Value)) %>%
-  filter(!is.na(Value))
+  filter(!is.na(Value)) %>%
+  select(DateTime, Site, Treatment, PlotID, LoggerLocation, Variable, Value)
 
 # Checks
 # TinyTag %>%

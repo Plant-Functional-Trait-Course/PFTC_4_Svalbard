@@ -58,16 +58,15 @@ WeatherStation <- list.files(path = "raw_data/climate/DATA_ITEX_2015_2018/Hobo_w
   group_by(DateTime, PAR, WaterContent, Temperature, RelHumidity, SolarRadiation) %>%
   mutate(n = 1:n()) %>%
   filter(n == 1) %>%
-  select(-n) %>%
+  select(-n, -file) %>%
   # remove last day
   filter(!grepl("2018-09-19", DateTime)) %>%
-  mutate(Logger = "WeatherStation")
-
-
-# Create new folder if not there yet
-ifelse(!dir.exists("clean_data/climate/"), dir.create("clean_data/climate/"), FALSE)
-
-write_csv(WeatherStation, path = "clean_data/climate/ItexSvalbard_Climate_2015_2018.csv", col_names = TRUE)
+  mutate(LoggerLocation = "air",
+         LoggerType = "WeatherStation") %>%
+  pivot_longer(cols = c(PAR, WaterContent, Temperature, RelHumidity, SolarRadiation),
+               names_to = "Variable",
+               values_to = "Value") %>%
+  filter(!is.na(Value))
 
 
 ### Plotting and checking data

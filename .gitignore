@@ -36,6 +36,8 @@ vignettes/*.pdf
 
 # data
 !envelope_codes.Rdata
+!raw_data/remote_senseing_ids.txt
+!raw_data/PFTC4_Svalbard_2018_speciesList.csv
 *.Rdata
 *.xls
 *.xlsx
