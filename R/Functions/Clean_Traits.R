@@ -269,7 +269,7 @@ traits_calculations <- traits_area %>%
          Dry_Mass_g = ifelse(ID == "AKI3166", 0.012, Dry_Mass_g),
          Dry_Mass_g = ifelse(ID == "AEA5561", 0.023, Dry_Mass_g)) %>%
 
-  # Replace Area and Thickness with AQL4331, because leaf was mixed after scannig, deltet AQL4331, because leaf was lost
+  # Replace Area and Thickness with AQL4331, because leaf was mixed after scannig, deletet AQL4331, because leaf was lost
   mutate(Leaf_Area_cm2 = ifelse(ID == "AEB3831", 2.804, Leaf_Area_cm2),
          Leaf_Thickness_1_mm = ifelse(ID == "AEB3831", 0.0161, Leaf_Thickness_1_mm),
          Leaf_Thickness_2_mm = ifelse(ID == "AEB3831", 0.236, Leaf_Thickness_2_mm),
@@ -441,6 +441,11 @@ traits_and_cnp <- traits_calculations2 %>%
   distinct() %>%
   left_join(cnp_data, by = c("ID", "Country"))
 
+# will not join
+# Missing site of plot: CUO1118, CUR9333, AYU6804, CDX1924, CCK4783, AWN7480
+# leaf lost: AQL4331
+# cnp_data %>%
+#   anti_join(traits_calculations2, by = c("ID", "Country")) %>% View()
 
 #### DIVID DATA INTO TRAITS, BRYOPHYTES, BETULA NANA ####
 # prepare
