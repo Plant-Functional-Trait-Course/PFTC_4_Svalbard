@@ -11,12 +11,12 @@
 #### PHOSPHORUS DATA ####
 # p <- sheets_read(ss = "1f2mDGLD8vH0ZxywC2YkfZTGEzspfCbsBVOV5osWIDBI", sheet = "Phosphorus") %>%
 #   select(-Rack_Number, -Row, -Column)
-p <- read_excel(path = "raw_data/traits/PFTC_All_Phosphor.xlsx") %>%
+p <- read_csv(file = "raw_data/traits/PFTC_All_Phosphor.csv") %>%
   select(-Rack_Number, -Row, -Column)
 
 # Check IDs
-# load(file = "traits/Rdatagathering/envelope_codes.Rdata", verbose = TRUE)
-# setdiff(p$Individual_Nr, all_codes$hashcode)
+#load(file = "raw_data/traits/envelope_codes.Rdata", verbose = TRUE)
+setdiff(p$Individual_Nr, all_codes$hashcode)
 
 p <- p %>%
   rename("ID" = "Individual_Nr", "Country" = "Site") %>%
@@ -59,7 +59,8 @@ p <- p %>%
          ID = gsub("BLT5062", "BLT5002", ID),
          ID = gsub("1172520.0", "APR5110", ID),
          ID = gsub("CBX63219", "CBX6319", ID),
-         ID = gsub("13119.0", "DEC0035", ID))
+         ID = gsub("13119.0", "DEC0035", ID),
+         ID = gsub("Apr5110", "APR5110", ID))
 
 # only "Hard Red Spring Wheat Flour", "Standard1" and "Standard2"
 #setdiff(p$ID, all_codes$hashcode)
