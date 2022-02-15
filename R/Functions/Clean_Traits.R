@@ -229,6 +229,10 @@ traits_area <- traits %>%
 
 #### CALCULATE SLA, LDMC AND FIX MORE STUFF ####
 traits_calculations <- traits_area %>%
+  # add Functional group variable
+  mutate(Functional_group = case_when(Project == "T" ~ "vascular",
+                                      Project == "M" ~ "bryophyte",
+                                      TRUE ~ NA_character_)) %>%
   # Make variables consistent with China and Peru
   rename(Leaf_Area_cm2 = Area_cm2, Dry_Mass_g = Dry_mass_g, Wet_Mass_g = Wet_mass_g, Plant_Height_cm = Plant_height_cm, Leaf_Thickness_1_mm = Leaf_thickness_1_mm, Leaf_Thickness_2_mm = Leaf_thickness_2_mm, Leaf_Thickness_3_mm = Leaf_thickness_3_mm) %>%
 
@@ -288,12 +292,14 @@ traits_calculations <- traits_area %>%
          NrLeaves = ifelse(ID == "BXF4662", 8, NrLeaves)) %>%
 
   # Equisetum does not need leaf number = > Leaf nr = 1 because of calculations below
-  mutate(NrLeaves = ifelse(Genus == "equisetum", 1, NrLeaves)) %>%
+  # same for bryophytes
+  mutate(NrLeaves = ifelse(Genus == "equisetum" | Functional_group == "bryophyte", 1, NrLeaves)) %>%
 
   # Calculate values on the leaf level (mostly bulk samples)
   rename(Wet_Mass_Total_g = Wet_Mass_g,
          Dry_Mass_Total_g = Dry_Mass_g,
          Leaf_Area_Total_cm2 = Leaf_Area_cm2) %>%
+  # For vascular plants, divide by nr of leaves
   mutate(Wet_Mass_g = Wet_Mass_Total_g / NrLeaves,
          Dry_Mass_g = Dry_Mass_Total_g / NrLeaves,
          Leaf_Area_cm2 = Leaf_Area_Total_cm2 / NrLeaves) %>%
@@ -314,28 +320,29 @@ traits_calculations <- traits_area %>%
   # Calculate SLA, LMDC
   mutate(Leaf_Thickness_mm = rowMeans(select(., matches("Leaf_Thickness_\\d_mm")), na.rm = TRUE),
          SLA_cm2_g = Leaf_Area_cm2 / Dry_Mass_g,
-         LDMC = Dry_Mass_g / Wet_Mass_g) %>%
+         LDMC = if_else(Functional_group == "vascular", Dry_Mass_g / Wet_Mass_g, NA_real_),
+         WHC_g_g = if_else(Functional_group == "bryophyte", (Wet_Mass_g - Dry_Mass_g)/Dry_Mass_g, NA_real_)) %>%
 
   # Measures for the mosses
   mutate(Length_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE),
          GreenLength_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>%
 
   # Flags and filter unrealistic trait values
-  mutate(Dry_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
-         Wet_Mass_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_g),
-         Leaf_Area_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_cm2),
-         Dry_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Dry_Mass_Total_g),
-         Wet_Mass_Total_g = ifelse(SLA_cm2_g > 500, NA_real_, Wet_Mass_Total_g),
-         Leaf_Area_Total_cm2 = ifelse(SLA_cm2_g > 500, NA_real_, Leaf_Area_Total_cm2),
-         Flag = ifelse(SLA_cm2_g > 500, "SLA_>_500", NA_character_),
-         SLA_cm2_g = ifelse(SLA_cm2_g > 500, NA_real_, SLA_cm2_g),
+  mutate(Dry_Mass_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Wet_Mass_g),
+         Leaf_Area_cm2 = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Leaf_Area_cm2),
+         Dry_Mass_Total_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Wet_Mass_Total_g),
+         Leaf_Area_Total_cm2 = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Leaf_Area_Total_cm2),
+         Flag = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, "SLA_>_500", NA_character_),
+         SLA_cm2_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, SLA_cm2_g),
 
-         Dry_Mass_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_g),
-         Wet_Mass_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_g),
-         Dry_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Dry_Mass_Total_g),
-         Wet_Mass_Total_g = ifelse(LDMC > 1, NA_real_, Wet_Mass_Total_g),
-         Flag = ifelse(LDMC > 1, "LDMC_>_1", NA_character_),
-         LDMC = ifelse(LDMC > 1, NA_real_, LDMC)) %>%
+         Dry_Mass_g = ifelse(Functional_group == "vascular" & LDMC > 1, NA_real_, Dry_Mass_g),
+         Wet_Mass_g = ifelse(Functional_group == "vascular" & LDMC > 1, NA_real_, Wet_Mass_g),
+         Dry_Mass_Total_g = ifelse(Functional_group == "vascular" & LDMC > 1, NA_real_, Dry_Mass_Total_g),
+         Wet_Mass_Total_g = ifelse(Functional_group == "vascular" & LDMC > 1, NA_real_, Wet_Mass_Total_g),
+         Flag = ifelse(Functional_group == "vascular" & LDMC > 1, "LDMC_>_1", NA_character_),
+         LDMC = ifelse(Functional_group == "vascular" & LDMC > 1, NA_real_, LDMC)) %>%
   mutate(Flag = if_else(ID == "CCP4302", "Area cut a tiny bit", NA_character_)) %>%
   mutate(Flag = if_else(ID %in% c("ADM0955", "AMD6577", "AME5937", "AMF5763", "AMH0895", "AOE8815", "AOT9797", "ASF0636", "ASF0636", "BLS7300", "BUR2769", "BUZ1775"), "Thickness_measure_wrong_remeasured_dry_leaf_might_be_too_small_value", NA_character_)) %>%
   # Make data speak to other PFTC data
@@ -364,7 +371,7 @@ traits_calculations <- traits_area %>%
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>%
 
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Functional_group, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, WHC_g_g, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
 
 ### Add missing Individual_Nr for ITEX and gradients
@@ -474,11 +481,11 @@ traitsSV2018 <- traits_and_cnp %>%
          PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
   # make long table
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, Shoot_Length_cm, Shoot_Length_Green_cm, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
+  pivot_longer(cols = c(Plant_Height_cm:LDMC, Shoot_Length_cm, Shoot_Length_Green_cm, WHC_g_g, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
   filter(!is.na(Value)) %>%
 
   # logical order (removing Comment!!!)
-  select(Project, Year, Date, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Taxon, Trait, Value, Elevation_m, Latitude_N, Longitude_E) %>%
+  select(Project, Year, Date, Gradient, Site, Treatment, PlotID, Individual_nr, ID, Functional_group, Taxon, Trait, Value, Elevation_m, Latitude_N, Longitude_E) %>%
   distinct()
 
 
