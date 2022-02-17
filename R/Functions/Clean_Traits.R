@@ -11,7 +11,7 @@ source("R/Functions/Clean_ChemicalTraits.R")
 
 #### READ IN DATA SETS ####
 coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx")
-meta <- read_csvl(file = "clean_data/PFTC4_Svalbard_2018_metaItex.csv")
+meta <- read_csv(file = "clean_data/PFTC4_Svalbard_2018_metaItex.csv")
 traits_in <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_LeafTrait_with_DM.csv")
 LeafArea2018 <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_Raw_LeafArea.csv")
 
@@ -325,7 +325,8 @@ traits_calculations <- traits_area %>%
 
   # Measures for the mosses
   mutate(Length_Moss_cm = rowMeans(select(., matches("Length_\\d_cm")), na.rm = TRUE),
-         GreenLength_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE)) %>%
+         GreenLength_Moss_cm = rowMeans(select(., matches("GreenLength_\\d_cm")), na.rm = TRUE),
+         Shoot_ratio = if_else(Functional_group == "bryophyte", GreenLength_Moss_cm / Length_Moss_cm, NA_real_)) %>%
 
   # Flags and filter unrealistic trait values
   mutate(Dry_Mass_g = ifelse(Functional_group == "vascular" & SLA_cm2_g > 500, NA_real_, Dry_Mass_g),
@@ -371,7 +372,7 @@ traits_calculations <- traits_area %>%
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Project", "Treatment", "Site")) %>%
 
-  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Functional_group, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, WHC_g_g, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+  select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Functional_group, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, Shoot_ratio, WHC_g_g, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
 
 
 ### Add missing Individual_Nr for ITEX and gradients
@@ -481,7 +482,7 @@ traitsSV2018 <- traits_and_cnp %>%
          PlotID = str_replace(PlotID, "DRY", "DH")) %>%
 
   # make long table
-  pivot_longer(cols = c(Plant_Height_cm:LDMC, Shoot_Length_cm, Shoot_Length_Green_cm, WHC_g_g, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
+  pivot_longer(cols = c(Plant_Height_cm:LDMC, Shoot_Length_cm, Shoot_Length_Green_cm, Shoot_ratio, WHC_g_g, C_percent:P_percent, NP_ratio), names_to = "Trait", values_to = "Value") %>%
   filter(!is.na(Value)) %>%
 
   # logical order (removing Comment!!!)
