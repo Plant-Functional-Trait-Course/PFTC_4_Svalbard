@@ -9,12 +9,7 @@ draba_dic <- read_excel(path = "raw_data/community/PFTC4_Svalbard_2018_Draba_dic
   filter(Precense == 1)
 
 # coordinates
-coords <- read_excel(path = "clean_data/PFTC4_Svalbard_Coordinates.xlsx") %>%
-  filter(Project == "T",
-         !Site %in% c("CAS", "BIS", "DRY"),
-         !is.na(Site)) %>%
-  rename(Gradient = Treatment) %>%
-  mutate(Site = as.numeric(Site))
+coords <- read_csv(file = "clean_data/PFTC4_Svalbard_Coordinates_Gradient.csv")
 
 
 # clean
@@ -43,8 +38,8 @@ community_gradient <- community_gradient_raw %>%
                              Weather == "partly cloudy" ~ "partly_cloudy",
                              TRUE ~ Weather)) %>%
   # add coords
-  left_join(coords, by = c("Gradient" , "Site")) %>%
-  select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Fertile, Weather, Elevation_m:Longitude_E)
+  left_join(coords, by = c("Gradient" , "Site", "PlotID")) %>%
+  select(Year, Date, Gradient, Site, PlotID, Taxon, Cover, Fertile, Weather, Elevation_m:Latitude_N)
 
 write_csv(community_gradient, file = "clean_data/community/PFTC4_Svalbard_2018_Community_Gradient.csv")
 
