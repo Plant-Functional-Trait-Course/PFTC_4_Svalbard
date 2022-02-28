@@ -12,6 +12,14 @@ source("R/Functions/Clean_ChemicalTraits.R")
 #### READ IN DATA SETS ####
 coords <- read_csv(file = "clean_data/PFTC4_Svalbard_Coordinates_Gradient.csv") %>%
   mutate(Site = as.character(Site))
+# site level coords for bryophytes
+coords_site <- coords %>%
+  ungroup() %>%
+  group_by(Gradient, Site) %>%
+  summarise(Elevation_m_site = mean(Elevation_m),
+         Longitude_E_site = mean(Longitude_E),
+         Latitude_N_site = mean(Latitude_N))
+
 meta <- read_csv(file = "clean_data/PFTC4_Svalbard_2018_metaItex.csv")
 traits_in <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_LeafTrait_with_DM.csv")
 LeafArea2018 <- read_csv(file = "raw_data/traits/PFTC4_Svalbard_2018_Raw_LeafArea.csv")
@@ -372,8 +380,13 @@ traits_calculations <- traits_area %>%
 
   ### ADD ELEVATION; LATITUDE; LONGITUDE
   left_join(coords, by = c("Gradient", "Site", "PlotID")) %>%
-
+  left_join(coords_site, by = c("Gradient", "Site")) %>%
+  mutate(Elevation_m = if_else(Functional_group == "bryophyte", Elevation_m_site, Elevation_m),
+         Longitude_E = if_else(Functional_group == "bryophyte", Longitude_E_site, Longitude_E),
+         Latitude_N = if_else(Functional_group == "bryophyte", Latitude_N_site, Latitude_N)) %>%
   select(Country, Year, Project, Treatment, Latitude_N, Longitude_E, Elevation_m, Site, Gradient, PlotID, Functional_group, Taxon, Genus, Species, ID, Date, Individual_nr, Plant_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, Flag, Shoot_Length_cm = Length_Moss_cm, Shoot_Length_Green_cm = GreenLength_Moss_cm, Shoot_ratio, WHC_g_g, SSL_cm_g, Length_1_cm, Length_2_cm, Length_3_cm, GreenLength_1_cm, GreenLength_2_cm, GreenLength_3_cm, NrLeaves, Bulk_nr_leaves, NumberLeavesScan, Comment, Data_entered_by)
+
+
 
 
 ### Add missing Individual_Nr for ITEX and gradients
