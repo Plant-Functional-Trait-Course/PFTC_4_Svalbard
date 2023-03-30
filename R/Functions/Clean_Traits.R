@@ -163,7 +163,7 @@ traits <- traits_in %>%
          Species = ifelse(Genus == "saxifraga" & Species == "cerua", "cernua", Species),
          Species = ifelse(Genus == "saxifraga" & Species == "oppostifolia", "oppositifolia", Species),
          Species = ifelse(Genus == "aulacomnium" & Species == "turgidium", "turgidum", Species),
-         Species = ifelse(Genus == "sanionia" & Species == "uni", "sp", "uncinata"),
+         Species = ifelse(Genus == "sanionia" & Species == "uni", "sp", Species),
          Species = ifelse(Genus == "micranthes" & Species == "hieracifolia", "hieraciifolia", Species)) %>%
 
   # Fix wrong species
