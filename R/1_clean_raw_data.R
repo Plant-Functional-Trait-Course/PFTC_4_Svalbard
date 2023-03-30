@@ -33,3 +33,6 @@ source("R/Functions/Clean_Gradient_Community.R")
 
 # traits
 source("R/clean_raw_data/Functions/Clean_Traits.R")
+
+# soil
+source("R/Functions/Clean_Gradient_Soil_CN.R")
