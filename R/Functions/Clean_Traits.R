@@ -546,7 +546,7 @@ ITEX_traits_SV_2018 <- traitsSV2018 %>%
 
 # Saxy traits from Poliploidy study
 Poliploidy_traits_SV_2018 <- traitsSV2018 %>%
-  filter(Project == "Poliploidy") %>%
+  filter(Project == "Polyploidy") %>%
   select(-Gradient, -Site, -Treatment)
 
 # Create new folder if not there yet
